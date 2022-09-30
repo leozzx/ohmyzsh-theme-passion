@@ -1,4 +1,3 @@
-
 # gdate for macOS
 # REF: https://apple.stackexchange.com/questions/135742/time-in-milliseconds-since-epoch-in-the-terminal
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -53,6 +52,7 @@ function directory() {
     local color="%{$fg_no_bold[cyan]%}";
     # REF: https://stackoverflow.com/questions/25944006/bash-current-working-directory-with-replacing-path-to-home-folder
     local directory="${PWD/#$HOME/~}";
+    directory=$(basename $(dirname "$directory"))/$(basename "$directory")
     local color_reset="%{$reset_color%}";
     echo "${color}[${directory}]${color_reset}";
 }
@@ -61,7 +61,8 @@ function directory() {
 # git
 ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg_no_bold[blue]%}git(%{$fg_no_bold[red]%}";
 ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color%} ";
-ZSH_THEME_GIT_PROMPT_DIRTY="%{$fg_no_bold[blue]%}) 🔥";
+#the special char will mess up prompt, use simple '*'
+ZSH_THEME_GIT_PROMPT_DIRTY="%{$fg_no_bold[blue]%}) %{$fg_no_bold[red]%}**";
 ZSH_THEME_GIT_PROMPT_CLEAN="%{$fg_no_bold[blue]%})";
 
 function update_git_status() {
@@ -82,9 +83,10 @@ function update_command_status() {
     export COMMAND_RESULT=$COMMAND_RESULT
     if $COMMAND_RESULT;
     then
-        arrow="%{$fg_bold[red]%}❱%{$fg_bold[yellow]%}❱%{$fg_bold[green]%}❱";
+        #the special char will mess up prompt, use simple '>'
+        arrow="%{$fg_bold[red]%}>%{$fg_bold[yellow]%}>%{$fg_bold[green]%}>";
     else
-        arrow="%{$fg_bold[red]%}❱❱❱";
+        arrow="%{$fg_bold[red]%}>>>";
     fi
     COMMAND_STATUS="${arrow}${reset_font}${color_reset}";
 }
@@ -112,7 +114,7 @@ output_command_execute_after() {
         color_cmd="$fg_bold[red]";
     fi
     local color_reset="$reset_color";
-    cmd="${color_cmd}${cmd}${color_reset}"
+    cmd="${color_cmd}${cmd} (exit $2)${color_reset}"
 
     # time
     local time="[$(date +%H:%M:%S)]"
@@ -186,7 +188,7 @@ precmd() {
     update_command_status $last_cmd_result;
 
     # output command execute after
-    output_command_execute_after $last_cmd_result;
+    output_command_execute_after $last_cmd_result $last_cmd_return_code;
 }
 
 
@@ -209,5 +211,4 @@ TRAPALRM() {
 
 
 # prompt
-# PROMPT='$(real_time) $(login_info) $(directory) $(git_status)$(command_status) ';
-PROMPT='$(real_time) $(directory) $(git_status)$(command_status) ';
+PROMPT='$(real_time) $(login_info) $(directory) $(git_status)$(command_status) ';
